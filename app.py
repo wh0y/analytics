@@ -16,7 +16,8 @@ GA_MEASUREMENT_ID = os.getenv('GA_MEASUREMENT_ID')
 GA_API_SECRET = os.getenv('GA_API_SECRET')
 
 def init_db():
-    with sqlite3.connect('views.db') as conn:
+    db_path = os.path.join(os.path.dirname(__file__), 'views.db')
+    with sqlite3.connect(db_path) as conn:
         conn.execute('''
             CREATE TABLE IF NOT EXISTS views (
                 ip TEXT,
@@ -27,6 +28,12 @@ def init_db():
         ''')
         conn.commit()
 
+@app.before_request
+def check_db():
+    db_path = os.path.join(os.path.dirname(__file__), 'views.db')
+    if not os.path.exists(db_path):
+        init_db()
+
 @app.route('/track-view')
 def track_view():
     client_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
@@ -34,7 +41,8 @@ def track_view():
     today = datetime.now().strftime("%Y-%m-%d")
 
     try:
-        with sqlite3.connect('views.db') as conn:
+        db_path = os.path.join(os.path.dirname(__file__), 'views.db')
+        with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT OR IGNORE INTO views (ip, user_agent, date) VALUES (?, ?, ?)",
@@ -48,7 +56,8 @@ def track_view():
 @app.route('/get-total-views')
 def get_total_views():
     try:
-        with sqlite3.connect('views.db') as conn:
+        db_path = os.path.join(os.path.dirname(__file__), 'views.db')
+        with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM views WHERE date = ?", 
                          (datetime.now().strftime("%Y-%m-%d"),))
