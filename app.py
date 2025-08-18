@@ -61,8 +61,13 @@ def get_total_views():
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM views WHERE date = ?", 
                          (datetime.now().strftime("%Y-%m-%d"),))
+            daily_views = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM views")
             total_views = cursor.fetchone()[0]
-        return jsonify({"total_views": total_views})
+        return jsonify({
+            "daily_views": daily_views,
+            "total_views": total_views
+        })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
